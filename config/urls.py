@@ -17,21 +17,30 @@ def home_view(request):
             if action == 'create_order':
                 title = request.POST.get('order_title')
                 desc = request.POST.get('order_desc')
-                budget = float(request.POST.get('order_budget'))
-                ORDERS_DB.append({
-                    'title': title,
-                    'description': desc,
-                    'budget': budget,
-                    'client_name': full_name,
-                    'client_phone': phone,
-                    'status': 'waiting_payment',
-                    'admin_card': ADMIN_CARD,
-                    'developer_name': None,
-                    'developer_phone': None,
-                    'project_file': None,
-                    'messages': []
-                })
+                budget_str = request.POST.get('order_budget')
+                if budget_str:
+                    budget = float(budget_str)
+                    ORDERS_DB.append({
+                        'id': len(ORDERS_DB),
+                        'title': title,
+                        'description': desc,
+                        'budget': budget,
+                        'client_name': full_name,
+                        'client_phone': phone,
+                        'status': 'waiting_payment',  # Boshlanishiga to'lov kutiladi
+                        'admin_card': ADMIN_CARD,
+                        'developer_name': None,
+                        'developer_phone': None,
+                        'project_file': None,
+                        'messages': []
+                    })
             elif action == 'pay_order':
+                # Xaridor pulni o'tkazdim deb belgilaydi -> status: admin tasdiqlashi kutiladi
+                order_id = int(request.POST.get('order_id'))
+                if 0 <= order_id < len(ORDERS_DB):
+                    ORDERS_DB[order_id]['status'] = 'payment_review'
+            elif action == 'approve_payment':
+                # Admin (yoki tizim egasi) pul kelganini tasdiqlaydi -> zakoz Ochiq elon qilinadi
                 order_id = int(request.POST.get('order_id'))
                 if 0 <= order_id < len(ORDERS_DB):
                     ORDERS_DB[order_id]['status'] = 'open'
@@ -42,6 +51,7 @@ def home_view(request):
                     ORDERS_DB[order_id]['developer_name'] = full_name
                     ORDERS_DB[order_id]['developer_phone'] = phone
             elif action == 'submit_project':
+                # Dasturchi proyekt havolasini yuklaydi
                 order_id = int(request.POST.get('order_id'))
                 project_link = request.POST.get('project_link')
                 if 0 <= order_id < len(ORDERS_DB):
@@ -87,8 +97,10 @@ def home_view(request):
                 request.session['phone'] = request.session.get('temp_phone')
                 return redirect('home')
             else:
-                return render(request, 'verify_sms.html',
-                              {'phone': request.session.get('temp_phone'), 'error': 'Kod xato! (Test kodi: 1234)'})
+                return render(request, 'verify_sms.html', {
+                    'phone': request.session.get('temp_phone'),
+                    'error': 'Kod xato! (Test kodi: 1234)'
+                })
 
     return render(request, 'home.html')
 

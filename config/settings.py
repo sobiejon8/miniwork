@@ -24,8 +24,8 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-your-secret-key-here')
 # DEBUG ni .env dan olish uchun:
 DEBUG = env('DEBUG')
 
-# Render va lokal domenlarga ruxsat beramiz
-ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
+# Render va lokal domenlarga aniq ruxsat beramiz
+ALLOWED_HOSTS = ['miniwork.onrender.com', '.onrender.com', 'localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -136,4 +136,3 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Custom User modelimizni Django'ga ulaymiz
-AUTH_USER_MODEL = 'users.User'

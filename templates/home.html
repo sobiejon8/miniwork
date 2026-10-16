@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniWork - Tizimga kirish</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #28a745; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>MiniWork-ga xush kelibsiz</h2>
+        <p>Davom etish uchun ma'lumotlaringizni kiriting:</p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="step" value="send_phone">
+
+            <label style="float: left; font-size: 14px;">Ism va Familiya:</label>
+            <input type="text" name="full_name" placeholder="Sobirjon Sobirov" required>
+
+            <label style="float: left; font-size: 14px;">Telefon raqam:</label>
+            <input type="text" name="phone" placeholder="+998901234567" required>
+
+            <button type="submit">SMS kod olish</button>
+        </form>
+    </div>
+</body>
+</html>

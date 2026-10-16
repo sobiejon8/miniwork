@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniWork - Professional Frilanser Platformasi</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { color: #2c3e50; margin: 0; font-size: 24px; }
+        .user-badge { background: #e3f2fd; padding: 8px 15px; border-radius: 20px; color: #0d6efd; font-weight: 600; font-size: 14px; }
+        .logout { color: #dc3545; text-decoration: none; font-weight: bold; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .card { background: #fff; padding: 25px; border: 1px solid #e0e0e0; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        h2 { font-size: 18px; color: #495057; margin-top: 0; margin-bottom: 20px; border-left: 4px solid #0d6efd; padding-left: 10px; }
+        label { font-size: 13px; font-weight: 600; color: #6c757d; display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 10px 12px; margin-bottom: 15px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        button { background: #0d6efd; color: white; border: none; padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #0b5ed7; }
+        .order-box { background: #fdfdfe; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-bottom: 15px; position: relative; }
+        .badge-status { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-wait { background: #fff3cd; color: #856404; }
+        .status-open { background: #d1e7dd; color: #0f5132; }
+        .status-progress { background: #cfe2ff; color: #084298; }
+        .status-sub { background: #f8d7da; color: #842029; }
+        .status-done { background: #d4edda; color: #155724; }
+        .chat-box { background: #f1f3f5; padding: 10px; border-radius: 6px; max-height: 120px; overflow-y: auto; margin: 10px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💼 MiniWork Platformasi</h1>
+            <div>
+                <span class="user-badge">👤 {{ full_name }} ({{ phone }})</span>
+                <a href="/logout/" class="logout" style="margin-left: 15px;">Chiqish</a>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Chap tomon: Xaridor bo'limi -->
+            <div class="card">
+                <h2>🛒 Xaridor Kabineti</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_order">
+                    <label>Loyiha nomi</label>
+                    <input type="text" name="order_title" placeholder="Masalan: Veb-sayt yaratish" required>
+
+                    <label>Tavsif va talablar</label>
+                    <textarea name="order_desc" rows="3" placeholder="Batafsil yozing..." required></textarea>
+
+                    <label>Byudjet ($)</label>
+                    <input type="number" name="order_budget" placeholder="100" required>
+
+                    <button type="submit" style="background: #198754;">Zakoz yaratish</button>
+                </form>
+            </div>
+
+            <!-- O'ng tomon: Dasturchi & Barcha buyurtmalar -->
+            <div class="card">
+                <h2>📋 Mavjud Loyihalar</h2>
+                {% if orders %}
+                    {% for order in orders %}
+                        <div class="order-box">
+                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">{{ order.title }}</h3>
+                            <p style="margin: 0 0 10px 0; color: #666; font-size: 13px;">{{ order.description }}</p>
+                            <p style="margin: 0 0 10px 0; font-size: 13px;"><b>Byudjet:</b> ${{ order.budget }} | <b>Xaridor:</b> {{ order.client_name }}</p>
+
+                            <!-- 1. Holat: Pul to'lash kutilmoqda (Admin kartasi bilan) -->
+                            {% if order.status == 'waiting_payment' %}
+                                <span class="badge-status status-wait">To'lov kutilmoqda (Escrow)</span>
+                                <p style="font-size: 13px; color: #d9534f; margin: 8px 0; background: #fff8f8; padding: 8px; border-radius: 4px; border: 1px dashed #dc3545;">
+                                    💳 Pulni vaqtincha saqlash uchun karta raqamimiz: <b>{{ order.admin_card }}</b>
+                                </p>
+                                {% if order.client_name == full_name %}
+                                    <form method="POST" style="margin-top: 10px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="pay_order">
+                                        <input type="hidden" name="order_id" value="{{ forloop.counter0 }}">
+                                        <button type="submit" style="background: #ffc107; color: #000; padding: 6px 12px; font-size: 12px;">Pulni o'tkazdim (Tasdiqlash)</button>
+                                    </form>
+                                {% endif %}
+
+                            <!-- 2. Holat: Ochiq, dasturchi olishi mumkin -->
+                            {% elif order.status == 'open' %}
+                                <span class="badge-status status-open">Ochiq - Dasturchi kutilmoqda</span>
+                                <form method="POST" style="margin-top: 10px;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="take_order">
+                                    <input type="hidden" name="order_id" value="{{ forloop.counter0 }}">
+                                    <button type="submit" style="padding: 6px 12px; font-size: 12px;">Zakozni olish</button>
+                                </form>
+
+                            <!-- 3. Holat: Bajarilmoqda -->
+                            {% elif order.status == 'in_progress' %}
+                                <span class="badge-status status-progress">Bajarilmoqda: {{ order.developer_name }}</span>
+
+                                {% if order.developer_name == full_name %}
+                                    <form method="POST" style="margin-top: 10px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="submit_project">
+                                        <input type="hidden" name="order_id" value="{{ forloop.counter0 }}">
+                                        <input type="text" name="project_link" placeholder="Loyiha fayli yoki GitHub havolasi" required style="margin-bottom: 5px;">
+                                        <button type="submit" style="padding: 6px 12px; font-size: 12px; background: #6f42c1;">Natijani topshirish</button>
+                                    </form>
+                                {% endif %}
+
+                            <!-- 4. Holat: Tekshiruvda (Natija tashlandi) -->
+                            {% elif order.status == 'submitted' %}
+                                <span class="badge-status status-sub">Tekshiruvda (Natija tashlandi)</span>
+                                <p style="font-size: 13px; margin: 5px 0;"><b>Havola/Fayl:</b> <a href="{{ order.project_file }}" target="_blank">{{ order.project_file }}</a></p>
+
+                                {% if order.client_name == full_name %}
+                                    <form method="POST" style="margin-top: 10px;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve_project">
+                                        <input type="hidden" name="order_id" value="{{ forloop.counter0 }}">
+                                        <button type="submit" style="background: #198754; padding: 6px 12px; font-size: 12px;">Maqul keldi (Tasdiqlash)</button>
+                                    </form>
+                                {% endif %}
+
+                            <!-- 5. Holat: Yakunlangan (10% komissiya sizda) -->
+                            {% elif order.status == 'completed' %}
+                                <span class="badge-status status-done">Yakunlandi ✅</span>
+                                <p style="font-size: 12px; color: #155724; margin: 5px 0;">
+                                    Dasturchiga berildi: ${{ order.dev_earnings }} | Sizning 10% komissiyangiz: <b>${{ order.commission }}</b>
+                                </p>
+                            {% endif %}
+
+                            <!-- Chat qismi -->
+                            {% if order.status != 'waiting_payment' and order.status != 'open' %}
+                                <div class="chat-box">
+                                    <b>Chat:</b>
+                                    {% for msg in order.messages %}
+                                        <div><b>{{ msg.sender }}:</b> {{ msg.text }}</div>
+                                    {% empty %}
+                                        <div style="color: #999;">Hozircha xabarlar yo'q.</div>
+                                    {% endfor %}
+                                </div>
+                                <form method="POST" style="display: flex; gap: 5px; margin: 0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="send_message">
+                                    <input type="hidden" name="order_id" value="{{ forloop.counter0 }}">
+                                    <input type="text" name="msg_text" placeholder="Xabar..." required style="margin:0; font-size:12px; padding:6px;">
+                                    <button type="submit" style="padding: 6px 10px; font-size: 12px;">Yuborish</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: #999; text-align: center;">Hozircha zakozlar yo'q.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
